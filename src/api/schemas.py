@@ -31,6 +31,7 @@ class Paragraph(BaseModel):
     no_change_fontname: bool | None = None
     no_change_text_size: bool | None = None
     current_element_mark: str | None = None
+    result: None = None
     class Config:
         orm_model = True
 
