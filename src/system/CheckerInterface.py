@@ -8,7 +8,7 @@ class CheckerInterface(ABC):
         pass
 
     @abstractmethod
-    def load_document(self):
+    def load_document(self, document):
         pass
 
     @abstractmethod
@@ -16,5 +16,5 @@ class CheckerInterface(ABC):
         pass
 
     @abstractmethod
-    def load_rules(self):
+    def load_rules(self, db, gost):
         pass

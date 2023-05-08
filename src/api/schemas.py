@@ -1,6 +1,7 @@
 from typing import Any
 from pydantic import BaseModel
-
+class GostID(BaseModel):
+    gost_id: int
 class Paragraph(BaseModel):
     page_breake_before: Any | None = None
     keep_lines_together: Any | None = None
@@ -73,5 +74,10 @@ class Elements(BaseModel):
     element: str
     description: str
     elements: list[Gost_params] = []
+    class Config:
+        orm_model = True
+
+class Path(BaseModel):
+    path: str
     class Config:
         orm_model = True
