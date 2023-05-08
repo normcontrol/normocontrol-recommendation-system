@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from . import crud
 from .database import SessionLocal
 from ..system.Checker import Checker
-from ..system.Rule import Rule
 
 # Dependency
 def get_db():
