@@ -76,3 +76,8 @@ class Elements(BaseModel):
     elements: list[Gost_params] = []
     class Config:
         orm_model = True
+
+class Path(BaseModel):
+    path: str
+    class Config:
+        orm_model = True

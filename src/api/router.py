@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
-from .schemas import Document, GostID
+from .schemas import Document, GostID, Path
 from sqlalchemy.orm import Session
 from . import crud
 from .database import SessionLocal
@@ -17,9 +17,10 @@ def get_db():
 
 recommendation_router = APIRouter(prefix = '', tags = ['Recommendation'])
 @recommendation_router.post('/check')
-def check(gost_id: GostID, request: Request, document: Document, db: Session = Depends(get_db)):
-    checker = Checker(document, gost_id.gost_id, db)
+def check(gost_id: GostID, path: Path, request: Request, document: Document, db: Session = Depends(get_db)):
+    checker = Checker(document, gost_id.gost_id, path.path, db)
     document = checker.check()
+    checker.create_report()
     return document
 
 @recommendation_router.get('/get_all_gost_params')
