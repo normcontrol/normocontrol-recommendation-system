@@ -19,7 +19,6 @@ recommendation_router = APIRouter(prefix = '', tags = ['Recommendation'])
 def check(gost_id: GostID, path: Path, request: Request, document: Document, db: Session = Depends(get_db)):
     checker = Checker(document, gost_id.gost_id, path.path, db)
     document = checker.check()
-    checker.create_report()
     return document
 
 @recommendation_router.get('/get_all_gost_params')
