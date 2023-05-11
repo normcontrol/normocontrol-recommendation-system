@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 import operator
@@ -8,6 +6,8 @@ from src.system.CheckerInterface import CheckerInterface
 from src.api.schemas import Document, Paragraph
 from src.system.Rule import Rule
 from src.system.errors.parameter_value_error import ParameterValueError
+import aspose.words as aw
+from datetime import date
 import fitz, os
 
 
@@ -29,9 +29,11 @@ class Checker(CheckerInterface):
 
         file_path = self.path.split('\\')
         self.input_file_name = file_path[len(file_path) - 1]
-        # Output PDF file
-        self.output_file_name = self.input_file_name[0:(len(self.input_file_name) - len(
-            file_path[len(file_path) - 1])) - 4] + '_commented.pdf'
+        file_name = self.input_file_name[0:(len(self.input_file_name) - len(file_path[len(file_path) - 1])) - 4]
+        if 'odt' in path:
+            self.output_file_name = file_name + '_commented.docx'
+        elif 'pdf' in path:
+            self.output_file_name = file_name + '_commented.pdf'
 
     def check(self):
         def check_parameters(element, rule, operator_label):
@@ -109,7 +111,7 @@ class Checker(CheckerInterface):
     def load_document(self, document):
         return document
 
-    def create_report(self):
+    def create_pdf_report(self):
         file_path = self.path.split('\\')
         directory = self.path[0:(len(self.path) - (len(file_path[len(file_path) - 1]) + 4))]
         os.chdir(directory)
@@ -152,6 +154,47 @@ class Checker(CheckerInterface):
         pdf_in.save(os.path.join('.\\out', self.output_file_name), garbage=3, deflate=True)
         pdf_in.close()
 
+    def create_docx_report(self):
+        file_path = self.path.split('\\')
+        directory = self.path[0:(len(self.path) - (len(file_path[len(file_path) - 1]) + 4))]
+        os.chdir(directory)
+
+        doc = aw.Document(directory + '\\in\\' + self.input_file_name)
+        for element in self.document.content.values():
+            if isinstance(element, Paragraph):
+                warning_str = ''
+                for param, err in element.result['Warning'].items():
+                    warning_str += param + ' - ' + err + '\n\n'
+
+                error_str = ''
+                for param, err in element.result['Error'].items():
+                    error_str += param + ' - ' + err + '\n\n'
+
+                red_color = (1, 0, 0)
+                warning_color = (0, 1, 1)
+                if warning_str != '' and error_str == '':
+                    pdf_in = self.comment_docx(doc=doc,
+                                              element=element,
+                                              comment_title='Warning',
+                                              comment_info=warning_str,
+                                              color=warning_color
+                                              )
+                elif error_str != '' and warning_str == '':
+                    pdf_in = self.comment_docx(doc=doc,
+                                              element=element,
+                                              comment_title='Error',
+                                              comment_info=error_str,
+                                              color=red_color
+                                              )
+                elif error_str != '' and warning_str != '':
+                    pdf_in = self.comment_docx(doc=doc,
+                                              element=element,
+                                              comment_title='Error',
+                                              comment_info=error_str + '\n [Warning !!!] \n' + warning_str,
+                                              color=red_color
+                                              )
+        doc.save(directory + '\\out\\' + self.output_file_name)
+
     def comment_pdf(self, pdf_in, element, comment_title: str, comment_info: str, color):
         """
         Search for a particular string value in a PDF file and add comments to it.
@@ -179,6 +222,31 @@ class Checker(CheckerInterface):
                     annot.update()
         return pdf_in
 
+    def comment_docx(self, doc, element, comment_title, comment_info, color):
+        word = element.text
+        # Use Range.replace method to make each searched word a separate Run node.
+        opt = aw.replacing.FindReplaceOptions()
+        opt.use_substitutions = True
+        doc.range.replace(word, "$0", opt)
+
+        # Get all runs
+        runs = doc.get_child_nodes(aw.NodeType.RUN, True)
+
+        for r in runs:
+            run = r.as_run()
+            # process the runs with text that matches the searched word.
+            if run.text == word:
+                run.font.highlight_color = color
+                comment = aw.Comment(doc, "Нормоконтролер", "Нормоконтролер", date.today())
+                comment.paragraphs.add(aw.Paragraph(doc))
+                comment.first_paragraph.runs.add(aw.Run(doc, comment_title + '\n' + comment_info))
+                # Wrap the Run with CommentRangeStart and CommentRangeEnd
+                run.parent_node.insert_before(aw.CommentRangeStart(doc, comment.id), run)
+                run.parent_node.insert_after(aw.CommentRangeEnd(doc, comment.id), run)
+                # Add a comment.
+                run.parent_node.insert_after(comment, run)
+        return doc
+
     def load_rules(self, db, gost):
         all_gost_params = crud.get_gost_params(db, gost_id=gost)
         if all_gost_params is None:
@@ -190,3 +258,4 @@ class Checker(CheckerInterface):
                                    param.id_params.pdf))
         self.rules = rules_list
         return rules_list
+

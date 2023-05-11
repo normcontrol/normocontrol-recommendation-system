@@ -12,7 +12,11 @@ class CheckerInterface(ABC):
         pass
 
     @abstractmethod
-    def create_report(self):
+    def create_pdf_report(self):
+        pass
+
+    @abstractmethod
+    def create_docx_report(self):
         pass
 
     @abstractmethod
