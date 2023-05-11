@@ -12,6 +12,7 @@ class Params(Base):
     __tablename__ = "params"
     id = Column(Integer, primary_key=True, index=True)
     param = Column(String)
+    pdf = Column(Boolean)
     params = relationship("Gost_params", back_populates="id_params")
 
 class Elements(Base):

@@ -8,6 +8,6 @@ class ParameterValueError(Exception):
         self.expected_value = expected_value
 
     def __str__(self):
-        return f"Ошибка в элементе {self.element}!" \
-               f"Параметр {self.parameter} содержит значение {self.value}." \
-               f"Ожидаемое значение - {self.expected_value}!"
+        return f"Error in element {self.element}! " \
+               f"Parameter {self.parameter} contains value {self.value}. " \
+               f"Excpected - {self.expected_value}! "
