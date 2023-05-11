@@ -42,8 +42,12 @@ class Checker(CheckerInterface):
                     value = rule.value
                 if rule.parameter in ['font_name', 'text_size']:
                     if len(element.dict()[rule.parameter]) > 1:
-                        element.result['Error'][rule.parameter] = 'Используется несколько разных видов ' + \
-                                                                  rule.parameter
+                        str_of_parameters = ''
+                        for param in element.dict()[rule.parameter]:
+                            str_of_parameters += f'{param}, '
+                        element.result['Error'][rule.parameter] = f'Several different types of {rule.parameter} are used:\n' \
+                                                                  f'[{str_of_parameters}]'
+
                     else:
                         for list_value in element.dict()[rule.parameter]:
                             if operator_label(list_value, value):
@@ -112,27 +116,51 @@ class Checker(CheckerInterface):
         pdf_in = fitz.open(os.path.join('.\\in', self.input_file_name))
         for element in self.document.content.values():
             if isinstance(element, Paragraph):
-                comment = ''
+
+                warning_str = ''
+                for param, err in element.result['Warning'].items():
+                    warning_str += param + ' - ' + err + '\n\n'
+
+                error_str = ''
                 for param, err in element.result['Error'].items():
-                    comment += param + ' - ' + err + '\n\n'
-                if comment != '':
+                    error_str += param + ' - ' + err + '\n\n'
+
+                red_color = (1, 0, 0)
+                warning_color = (0, 1, 1)
+                if warning_str != '' and error_str == '':
+                    pdf_in = self.comment_pdf(pdf_in=pdf_in,
+                                              element=element,
+                                              comment_title='Warning',
+                                              comment_info=warning_str,
+                                              color=warning_color
+                                              )
+                elif error_str != '' and warning_str == '':
                     pdf_in = self.comment_pdf(pdf_in=pdf_in,
                                               element=element,
                                               comment_title='Error',
-                                              comment_info=comment
+                                              comment_info=error_str,
+                                              color=red_color
                                               )
+                elif error_str != '' and warning_str != '':
+                    pdf_in = self.comment_pdf(pdf_in=pdf_in,
+                                              element=element,
+                                              comment_title='Error',
+                                              comment_info=error_str + '\n [Warning !!!] \n' + warning_str,
+                                              color=red_color
+                                              )
+
         pdf_in.save(os.path.join('.\\out', self.output_file_name), garbage=3, deflate=True)
         pdf_in.close()
 
-    def comment_pdf(self, pdf_in, element, comment_title: str, comment_info: str):
+    def comment_pdf(self, pdf_in, element, comment_title: str, comment_info: str, color):
         """
         Search for a particular string value in a PDF file and add comments to it.
         """
-        red_color = (1, 0, 0)
+
         for pg, page in enumerate(pdf_in):
             page_id = pg + 1
             if self.document.page_count:
-                if page_id not in range(self.document.page_count):
+                if page_id not in range(self.document.page_count+1):
                     continue
 
             for key, rect in element.bbox.items():
@@ -141,7 +169,7 @@ class Checker(CheckerInterface):
                                                           round(rect[2]), round(page.rect.y1 - rect[3]))
                                                 .round())
                     annot.set_border({"dashes": [0], "width": 0.9})
-                    annot.set_colors({"colors": red_color, "stroke": red_color, "fill": red_color}),
+                    annot.set_colors({"colors": color, "stroke": color, "fill": color}),
                     annot.set_opacity(0.3)
                     # Add comment to the found match
                     info = annot.info
