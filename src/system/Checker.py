@@ -113,9 +113,11 @@ class Checker(CheckerInterface):
 
     def create_pdf_report(self):
         file_path = self.path.split('\\')
-        directory = self.path[0:(len(self.path) - (len(file_path[len(file_path) - 1]) + 4))]
+        # directory = self.path[0:(len(self.path) - (len(file_path[len(file_path) - 1]) + 4))]
+        from pathlib import Path
+        directory = Path.cwd().parent
         os.chdir(directory)
-        pdf_in = fitz.open(os.path.join('.\\in', self.input_file_name))
+        pdf_in = fitz.open(os.path.join('.\\system\\docs\\in', self.input_file_name))
         for element in self.document.content.values():
             if isinstance(element, Paragraph):
 
@@ -151,7 +153,7 @@ class Checker(CheckerInterface):
                                               color=red_color
                                               )
 
-        pdf_in.save(os.path.join('.\\out', self.output_file_name), garbage=3, deflate=True)
+        pdf_in.save(os.path.join('.\\system\\docs\\out', self.output_file_name), garbage=3, deflate=True)
         pdf_in.close()
 
     def create_docx_report(self):
@@ -224,28 +226,30 @@ class Checker(CheckerInterface):
 
     def comment_docx(self, doc, element, comment_title, comment_info, color):
         word = element.text
-        # Use Range.replace method to make each searched word a separate Run node.
-        opt = aw.replacing.FindReplaceOptions()
-        opt.use_substitutions = True
-        doc.range.replace(word, "$0", opt)
+        if word != '':
+            # Use Range.replace method to make each searched word a separate Run node.
+            opt = aw.replacing.FindReplaceOptions()
+            opt.use_substitutions = True
+            doc.range.replace(word, "$0", opt)
 
-        # Get all runs
-        runs = doc.get_child_nodes(aw.NodeType.RUN, True)
+            # Get all runs
+            runs = doc.get_child_nodes(aw.NodeType.RUN, True)
 
-        for r in runs:
-            run = r.as_run()
-            # process the runs with text that matches the searched word.
-            if run.text == word:
-                run.font.highlight_color = color
-                comment = aw.Comment(doc, "Нормоконтролер", "Нормоконтролер", date.today())
-                comment.paragraphs.add(aw.Paragraph(doc))
-                comment.first_paragraph.runs.add(aw.Run(doc, comment_title + '\n' + comment_info))
-                # Wrap the Run with CommentRangeStart and CommentRangeEnd
-                run.parent_node.insert_before(aw.CommentRangeStart(doc, comment.id), run)
-                run.parent_node.insert_after(aw.CommentRangeEnd(doc, comment.id), run)
-                # Add a comment.
-                run.parent_node.insert_after(comment, run)
-        return doc
+            for r in runs:
+                run = r.as_run()
+                # process the runs with text that matches the searched word.
+                if run.text == word:
+                    from aspose.pydrawing import Color
+                    run.font.highlight_color = Color.red
+                    comment = aw.Comment(doc, "Нормоконтролер", "Нормоконтролер", date.today())
+                    comment.paragraphs.add(aw.Paragraph(doc))
+                    comment.first_paragraph.runs.add(aw.Run(doc, comment_title + '\n' + comment_info))
+                    # Wrap the Run with CommentRangeStart and CommentRangeEnd
+                    run.parent_node.insert_before(aw.CommentRangeStart(doc, comment.id), run)
+                    run.parent_node.insert_after(aw.CommentRangeEnd(doc, comment.id), run)
+                    # Add a comment.
+                    run.parent_node.insert_after(comment, run)
+            return doc
 
     def load_rules(self, db, gost):
         all_gost_params = crud.get_gost_params(db, gost_id=gost)
