@@ -181,8 +181,8 @@ class Elements(BaseModel):
         orm_model = True
 
 
-class Path(BaseModel):
-    path: str
+class OriginDocument(BaseModel):
+    document_id: int
 
     class Config:
         orm_model = True

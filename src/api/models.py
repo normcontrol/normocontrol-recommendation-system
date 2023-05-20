@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date
 from sqlalchemy.orm import relationship
 from src.api.database import Base
 
@@ -34,3 +34,22 @@ class Gost_params(Base):
     id_gosts = relationship("Gosts", back_populates="gosts")
     id_elements = relationship("Elements", back_populates="elements")
     id_params = relationship("Params", back_populates="params")
+
+class Documents(Base):
+    __tablename__ = "Documents"
+    id_document = Column(Integer, primary_key=True, index=True)
+    id_user = Column(Integer)
+    title = Column(String)
+    input_document = Column(String)
+    output_document = Column(String)
+    date_created = Column(Date)
+    id_status = relationship("DocumentStatistics", back_populates="id_status")
+
+class DocumentStatistics(Base):
+    __tablename__ = "DocumentStatistics"
+    id = Column(Integer, primary_key=True, index=True)
+    id_document = relationship("Documents", back_populates="documents")
+    id_gost = relationship("Gosts", back_populates="gosts")
+    id_element = relationship("Elements", back_populates="elements")
+    id_param = relationship("Params", back_populates="params")
+    value = Column(String)

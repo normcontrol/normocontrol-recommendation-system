@@ -26,7 +26,6 @@ class Checker(CheckerInterface):
         self.path = path
         self.db = db
         self.rules = self.load_rules(db, gost)
-
         file_path = self.path.split('\\')
         self.input_file_name = file_path[len(file_path) - 1]
         file_name = self.input_file_name[0:(len(self.input_file_name) - len(file_path[len(file_path) - 1])) - 4]
@@ -112,12 +111,11 @@ class Checker(CheckerInterface):
         return document
 
     def create_pdf_report(self):
-        file_path = self.path.split('\\')
         # directory = self.path[0:(len(self.path) - (len(file_path[len(file_path) - 1]) + 4))]
         from pathlib import Path
         directory = Path.cwd().parent
         os.chdir(directory)
-        pdf_in = fitz.open(os.path.join('.\\system\\docs\\in', self.input_file_name))
+        pdf_in = fitz.open(os.path.join('C:\\Users\\Slava\\PycharmProjects\\normcontrol.ru\\normcontrol.ru\\webserver\\media\\', self.input_file_name))
         for element in self.document.content.values():
             if isinstance(element, Paragraph):
 
@@ -153,8 +151,12 @@ class Checker(CheckerInterface):
                                               color=red_color
                                               )
 
-        pdf_in.save(os.path.join('.\\system\\docs\\out', self.output_file_name), garbage=3, deflate=True)
+        pdf_in.save(os.path.join('C:\\Users\\Slava\\PycharmProjects\\normcontrol.ru\\normcontrol.ru\\webserver\\media\\output_documents', self.output_file_name.split('/')[1]), garbage=3, deflate=True)
         pdf_in.close()
+        output = {
+            'output_file_name': os.path.join('output_documents\\', self.output_file_name.split('/')[1])
+        }
+        return output
 
     def create_docx_report(self):
         file_path = self.path.split('\\')
@@ -197,6 +199,7 @@ class Checker(CheckerInterface):
                                               )
         doc.save(directory + '\\out\\' + self.output_file_name)
 
+        return self.output_file_name
     def comment_pdf(self, pdf_in, element, comment_title: str, comment_info: str, color):
         """
         Search for a particular string value in a PDF file and add comments to it.
