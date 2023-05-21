@@ -19,7 +19,7 @@ recommendation_router = APIRouter(prefix = '', tags = ['Recommendation'])
 def check(gost_id: GostID, origin_document: OriginDocument, request: Request, document: Document, db: Session = Depends(get_db)):
     origin_document = crud.get_document(db, origin_document.document_id)
     input_document = origin_document.input_document
-    checker = Checker(document, gost_id.gost_id, input_document, db)
+    checker = Checker(document, gost_id.gost_id, input_document, db, origin_document.id_document)
     document = checker.check()
     if 'odt' in input_document:
         output_document = checker.create_docx_report()

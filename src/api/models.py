@@ -7,6 +7,7 @@ class Gosts(Base):
     id = Column(Integer, primary_key=True, index=True)
     gost = Column(String)
     gosts = relationship("Gost_params", back_populates="id_gosts")
+    goststatistics = relationship("DocumentStatistics", back_populates="id_gosts")
 
 class Params(Base):
     __tablename__ = "params"
@@ -14,6 +15,7 @@ class Params(Base):
     param = Column(String)
     pdf = Column(Boolean)
     params = relationship("Gost_params", back_populates="id_params")
+    paramstatistics = relationship("DocumentStatistics", back_populates="id_params")
 
 class Elements(Base):
     __tablename__ = "elements"
@@ -21,6 +23,7 @@ class Elements(Base):
     element = Column(String)
     description = Column(String)
     elements = relationship("Gost_params", back_populates="id_elements")
+    elementstatistics = relationship("DocumentStatistics", back_populates="id_elements")
 
 class Gost_params(Base):
     __tablename__ = "gost_params"
@@ -35,6 +38,7 @@ class Gost_params(Base):
     id_elements = relationship("Elements", back_populates="elements")
     id_params = relationship("Params", back_populates="params")
 
+
 class Documents(Base):
     __tablename__ = "Documents"
     id_document = Column(Integer, primary_key=True, index=True)
@@ -43,13 +47,20 @@ class Documents(Base):
     input_document = Column(String)
     output_document = Column(String)
     date_created = Column(Date)
-    id_status = relationship("DocumentStatistics", back_populates="id_status")
+    # id_status = Column(Integer, ForeignKey("DocumentStatistics.id"))
+    id_status = relationship("DocumentStatistics", back_populates="id_documents")
 
 class DocumentStatistics(Base):
     __tablename__ = "DocumentStatistics"
     id = Column(Integer, primary_key=True, index=True)
-    id_document = relationship("Documents", back_populates="documents")
-    id_gost = relationship("Gosts", back_populates="gosts")
-    id_element = relationship("Elements", back_populates="elements")
-    id_param = relationship("Params", back_populates="params")
+
+    id_document = Column(Integer, ForeignKey("Documents.id_document"))
+    id_gost = Column(Integer, ForeignKey("gosts.id"))
+    id_element = Column(Integer, ForeignKey("elements.id"))
+    id_param = Column(Integer, ForeignKey("params.id"))
+
+    id_documents = relationship("Documents", back_populates="id_status")
+    id_gosts = relationship("Gosts", back_populates="goststatistics")
+    id_elements = relationship("Elements", back_populates="elementstatistics")
+    id_params = relationship("Params", back_populates="paramstatistics")
     value = Column(String)

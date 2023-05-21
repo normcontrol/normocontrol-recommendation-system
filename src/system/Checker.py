@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 import operator
 from src.api import crud
+from src.api.crud import add_document_statistic
 from src.system.CheckerInterface import CheckerInterface
 from src.api.schemas import Document, Paragraph
 from src.system.Rule import Rule
@@ -12,6 +13,7 @@ import fitz, os
 
 
 class Checker(CheckerInterface):
+    document_id: int
     document: Document
     gost: int
     path: str
@@ -20,7 +22,8 @@ class Checker(CheckerInterface):
     input_file_name: str
     output_file_name: str
 
-    def __init__(self, document: Document, gost, path, db):
+    def __init__(self, document: Document, gost, path, db, document_id):
+        self.document_id = document_id
         self.document = self.load_document(document)
         self.gost = gost
         self.path = path
@@ -48,6 +51,8 @@ class Checker(CheckerInterface):
                             str_of_parameters += f'{param}, '
                         element.result['Error'][rule.parameter] = f'Several different types of {rule.parameter} are used:\n' \
                                                                   f'[{str_of_parameters}]'
+                        add_document_statistic(self.db, self.document_id, self.gost, rule.structural_element_id,
+                                               rule.parameter_id, str_of_parameters)
 
                     else:
                         for list_value in element.dict()[rule.parameter]:
@@ -70,6 +75,8 @@ class Checker(CheckerInterface):
                                                       element.dict()[rule.parameter], rule.value)
             except ParameterValueError as e:
                 element.result['Error'][rule.parameter] = str(e)
+                add_document_statistic(self.db, self.document_id, self.gost, rule.structural_element_id,
+                                       rule.parameter_id, e.value)
 
         for element in self.document.content.values():
             if isinstance(element, Paragraph):
@@ -118,7 +125,6 @@ class Checker(CheckerInterface):
         pdf_in = fitz.open(os.path.join('C:\\Users\\Slava\\PycharmProjects\\normcontrol.ru\\normcontrol.ru\\webserver\\media\\', self.input_file_name))
         for element in self.document.content.values():
             if isinstance(element, Paragraph):
-
                 warning_str = ''
                 for param, err in element.result['Warning'].items():
                     warning_str += param + ' - ' + err + '\n\n'
@@ -262,7 +268,7 @@ class Checker(CheckerInterface):
         for param in all_gost_params:
             rules_list.append(Rule(param.id_elements.description, param.id_elements.element,
                                    param.id_params.param, param.is_recommented, param.operator, param.value,
-                                   param.id_params.pdf))
+                                   param.id_params.pdf, param.id_elements.id, param.id_params.id))
         self.rules = rules_list
         return rules_list
 
